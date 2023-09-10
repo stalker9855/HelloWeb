@@ -13,10 +13,7 @@ Company company = new Company
 
 // Token Middlweare || 1g231
 app.UseMiddleware<TokenMiddleware>();
-app.Run(async (context) =>
-{
-    context.Response.WriteAsync($"{company}\n" +
-        $"\nRandom number (0 to 100): {company.RandomNumber()}");
-});
+app.MapGet("/", () => $"{company}");
+app.MapGet("/randnum", () => $"\nRandom number (0 to 100): {company.RandomNumber()}");
 app.Run();
 
