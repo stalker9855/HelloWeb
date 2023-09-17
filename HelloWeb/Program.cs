@@ -1,7 +1,7 @@
 using HelloWeb;
 var builder = WebApplication.CreateBuilder(args);
 var app = builder.Build();
-string[] configs = { "Configurations\\microsoft.json", "Configurations\\apple.ini", "Configurations\\google.xml" };
+string[] configs = { "Configurations\\Microsoft.json", "Configurations\\Apple.ini", "Configurations\\Google.xml" };
 List<Company> companies = new List<Company>();
 
 foreach (string config in configs)
