@@ -1,56 +1,76 @@
 using HelloWeb;
-var builder = WebApplication.CreateBuilder(args);
-var app = builder.Build();
-string[] configs = { "Configurations\\Microsoft.json", "Configurations\\Apple.ini", "Configurations\\Google.xml" };
-List<Company> companies = new List<Company>();
+using HelloWeb.Controllers;
+using HelloWeb.Services;
 
-foreach (string config in configs)
-{
-    switch (Path.GetExtension(config))
-    {
-        case ".json":
-            builder.Configuration.AddJsonFile(config);
-             break;
-        case ".xml":
-            builder.Configuration.AddXmlFile(config);
-            break;
-        case ".ini":
-            builder.Configuration.AddIniFile(config);
-            break;
-        default:
-            break;
-    }
-    Company tempCompany = app.Configuration.Get<Company>();
-    companies.Add(tempCompany);
-}
-builder.Configuration.AddJsonFile("Configurations\\about.json");
+var builder = WebApplication.CreateBuilder(args);
+builder.Services.AddMvc();
+builder.Services.AddTransient<CalcService>();
+builder.Services.AddTransient<TimeService>();
+var app = builder.Build();
+CalcController calculator = new CalcController();
+TimeService timeService = new TimeService();
 // Token Middlweare || 1g231
 app.UseMiddleware<TokenMiddleware>();
-app.Map("/", (IConfiguration appConfig) =>
+app.MapGet("/", async context =>
 {
-    string companyName = "";
-    int employees = 0;
-    foreach (Company company in companies)
-    {
-        if (company.Employees > employees)
-        {
-            employees = company.Employees; 
-            companyName = company.Name;
-        }
-    }
-    return $"Company: {companyName}\nEmployees: {employees}";
-
+    await context.Response.WriteAsync(@"
+<html>
+    <head></head>
+    <body>
+        <h1>Calculator!</h1>
+        <form method='post' action='/calculate'>
+            <label for='num1'> First number: </label>
+            <input name='num1' type='text'><br>
+            <div>
+                <input name='operation' type='radio' id='add' name='addition' value='+'> 
+                <label for='add'>+</label>
+                <input name='operation' type='radio' id='multi' name='multiply' value='*'> 
+                <label for='multi'>*</label>
+                <input name='operation' type='radio' id='substr' name='substract' value='-'> 
+                <label for='substr'>-</label>
+                <input name='operation' type='radio' id='divide' name='division' value='/'> 
+                <label for='divide'>/</label>
+            </div>
+            <label for='num2'> Second number: </label>
+            <input name='num2' type='text'><br>
+            <div>
+                <button type='submit'>Submit</button>
+            </div>
+        </form>
+    </body>
+</html>");
 });
-app.MapGet("/about", () =>
+app.MapPost("/calculate", async context =>
 {
-    var person = new Person();
-    app.Configuration.Bind(person);
-    string hobbies = "\nHobbies:\n";
-    foreach(var hobby in person.Hobbies)
+    var operation = context.Request.Form["operation"];
+    var num1 = Convert.ToDouble(context.Request.Form["num1"]);
+    var num2 = Convert.ToDouble(context.Request.Form["num2"]);
+
+    double result = 0;
+
+    switch (operation)
     {
-        hobbies += " " + hobby + "\n";
+        case "+":
+            result = calculator.Addition(num1, num2);
+            break;
+        case "-":
+            result = calculator.Substract(num1, num2);
+            Console.WriteLine(result);
+            break;
+        case "*":
+            result = calculator.Multiply(num1, num2);
+            break;
+        case "/":
+            result = calculator.Divide(num1, num2);
+            break;
     }
-    return $"Name: {person.Name}\tLastname: {person.Lastname}\nAge: {person.Age} {hobbies}";
+
+    await context.Response.WriteAsync($"Result: {result}");
+});
+
+app.MapGet("/time", () =>
+{
+    return timeService.GetTime();
 });
 app.Run();
 
