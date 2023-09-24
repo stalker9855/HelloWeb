@@ -10,7 +10,7 @@ var app = builder.Build();
 CalcController calculator = new CalcController();
 TimeService timeService = new TimeService();
 // Token Middlweare || 1g231
-app.UseMiddleware<TokenMiddleware>();
+//app.UseMiddleware<TokenMiddleware>();
 app.MapGet("/", async context =>
 {
     await context.Response.WriteAsync(@"
