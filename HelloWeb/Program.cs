@@ -40,7 +40,7 @@ app.MapGet("Library/Books", async context =>
     }
     await context.Response.WriteAsync(content);
 });
-app.Map("/Library/Profile/{id?}", (string? id, HttpContext context) =>
+app.Map("/Library/Profile/{id:int:range(0,5)?}", (string? id, HttpContext context) =>
 {
     if (int.TryParse(id, out int userId))
     {
