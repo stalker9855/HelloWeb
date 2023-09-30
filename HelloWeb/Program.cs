@@ -1,76 +1,58 @@
 using HelloWeb;
-using HelloWeb.Controllers;
-using HelloWeb.Services;
+
 
 var builder = WebApplication.CreateBuilder(args);
-builder.Services.AddMvc();
-builder.Services.AddTransient<CalcService>();
-builder.Services.AddTransient<TimeService>();
 var app = builder.Build();
-CalcController calculator = new CalcController();
-TimeService timeService = new TimeService();
+builder.Configuration.AddJsonFile("Configurations/Books.json");
+List<Book> books = builder.Configuration.GetSection("Books").Get<List<Book>>();
+builder.Configuration.AddJsonFile("Configurations/Profiles.json");
+List<Profile> profiles = builder.Configuration.GetSection("Profiles").Get<List<Profile>>();
 // Token Middlweare || 1g231
-//app.UseMiddleware<TokenMiddleware>();
-app.MapGet("/", async context =>
+app.UseMiddleware<TokenMiddleware>();
+app.Map("/", context =>
 {
-    await context.Response.WriteAsync(@"
-<html>
-    <head></head>
-    <body>
-        <h1>Calculator!</h1>
-        <form method='post' action='/calculate'>
-            <label for='num1'> First number: </label>
-            <input name='num1' type='text'><br>
-            <div>
-                <input name='operation' type='radio' id='add' name='addition' value='+'> 
-                <label for='add'>+</label>
-                <input name='operation' type='radio' id='multi' name='multiply' value='*'> 
-                <label for='multi'>*</label>
-                <input name='operation' type='radio' id='substr' name='substract' value='-'> 
-                <label for='substr'>-</label>
-                <input name='operation' type='radio' id='divide' name='division' value='/'> 
-                <label for='divide'>/</label>
-            </div>
-            <label for='num2'> Second number: </label>
-            <input name='num2' type='text'><br>
-            <div>
-                <button type='submit'>Submit</button>
-            </div>
-        </form>
-    </body>
-</html>");
+    context.Response.ContentType = "text/html";
+    return context.Response.WriteAsync(@"
+        <html>
+            <body>
+                <h1>Hello!</h1>
+            </body>
+        </html>
+    ");
 });
-app.MapPost("/calculate", async context =>
+app.Map("/Library", context =>
 {
-    var operation = context.Request.Form["operation"];
-    var num1 = Convert.ToDouble(context.Request.Form["num1"]);
-    var num2 = Convert.ToDouble(context.Request.Form["num2"]);
-
-    double result = 0;
-
-    switch (operation)
+    context.Response.ContentType = "text/html";
+    return context.Response.WriteAsync(@"
+        <html>
+            <body>
+                <h1>Welcome to Library</h1>
+            </body>
+        </html>
+    ");
+});
+app.MapGet("Library/Books", async context =>
+{
+    string content = "";
+    foreach(var book in books)
     {
-        case "+":
-            result = calculator.Addition(num1, num2);
-            break;
-        case "-":
-            result = calculator.Substract(num1, num2);
-            Console.WriteLine(result);
-            break;
-        case "*":
-            result = calculator.Multiply(num1, num2);
-            break;
-        case "/":
-            result = calculator.Divide(num1, num2);
-            break;
+        content += $"{book.Id} - \"{book.Name}\" published by {book.Author} in {book.Year}\n";
     }
-
-    await context.Response.WriteAsync($"Result: {result}");
+    await context.Response.WriteAsync(content);
 });
-
-app.MapGet("/time", () =>
+app.Map("/Library/Profile/{id?}", (string? id, HttpContext context) =>
 {
-    return timeService.GetTime();
+    if (int.TryParse(id, out int userId))
+    {
+        var userProfile = profiles.FirstOrDefault(profile => profile.Id == userId);
+
+        if (userProfile != null)
+        {
+            return context.Response.WriteAsync($"User Id: {userProfile.Id}, Name: {userProfile.Name}");
+        }
+
+    }
+    return context.Response.WriteAsync($"User Id: {null}, Name: Guest");
 });
 app.Run();
 

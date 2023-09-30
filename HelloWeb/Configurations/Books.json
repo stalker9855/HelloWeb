@@ -1,0 +1,29 @@
+{
+  "Books": [
+    {
+      "id": 1,
+      "name": "Hamlet",
+      "author": "William Shakespeare",
+      "year": 1564
+    },
+    {
+      "id": 2,
+      "name": "1984",
+      "author": "George Orwell",
+      "year": 1948
+    },
+    {
+      "id": 3,
+      "name": "Sword of Destniy",
+      "author": "Andrzej Sapkowski",
+      "year": 1992
+    },
+    {
+      "id": 4,
+      "name": "The Lord of the Rings",
+      "author": "J. R. R. Tolkien",
+      "year": 1968
+    }
+  ]
+  
+}
