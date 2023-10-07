@@ -1,58 +1,76 @@
 using HelloWeb;
-
+using HelloWeb.Loggers;
 
 var builder = WebApplication.CreateBuilder(args);
+builder.Logging.AddFile(Path.Combine(Directory.GetCurrentDirectory(), "loggerErrors.txt"));
 var app = builder.Build();
-builder.Configuration.AddJsonFile("Configurations/Books.json");
-List<Book> books = builder.Configuration.GetSection("Books").Get<List<Book>>();
-builder.Configuration.AddJsonFile("Configurations/Profiles.json");
-List<Profile> profiles = builder.Configuration.GetSection("Profiles").Get<List<Profile>>();
+var logger = app.Logger;
 // Token Middlweare || 1g231
-app.UseMiddleware<TokenMiddleware>();
-app.Map("/", context =>
-{
-    context.Response.ContentType = "text/html";
-    return context.Response.WriteAsync(@"
-        <html>
-            <body>
-                <h1>Hello!</h1>
-            </body>
-        </html>
-    ");
+// app.UseMiddleware<TokenMiddleware>();
+app.MapGet("/", async (context) => {
+    await context.Response.WriteAsync(@"
+    <html>
+        <body>
+            <form method = 'post' action='/result'>
+                <label for='value'>Enter value: </label>
+                <input name='value' type='text><br>
+                <label for='date'> Select date: </label>
+                <input name='date' type='date'><br>
+                <div>
+                <button type='submit'>Submit</button>
+                </div>
+            </form>
+            <div><a href='/cookies'>Check cookies</a></div>
+        </body>
+    </html>");
 });
-app.Map("/Library", context =>
+app.MapPost("/result", async context =>
 {
-    context.Response.ContentType = "text/html";
-    return context.Response.WriteAsync(@"
-        <html>
-            <body>
-                <h1>Welcome to Library</h1>
-            </body>
-        </html>
-    ");
-});
-app.MapGet("Library/Books", async context =>
-{
-    string content = "";
-    foreach(var book in books)
+    var value = context.Request.Form["value"];
+    var date = context.Request.Form["date"];
+    //context.Response.Cookies.Append("value", value);
+    if (string.IsNullOrEmpty(value) || string.IsNullOrEmpty(date))
     {
-        content += $"{book.Id} - \"{book.Name}\" published by {book.Author} in {book.Year}\n";
+        await context.Response.WriteAsync("Error! Value | Date are empty");
+        logger.LogError("Error! Value | Date are empty");
+        return;
     }
-    await context.Response.WriteAsync(content);
-});
-app.Map("/Library/Profile/{id:int:range(0,5)?}", (string? id, HttpContext context) =>
-{
-    if (int.TryParse(id, out int userId))
+    if (DateTime.TryParse(date, out DateTime expiryDate))
     {
-        var userProfile = profiles.FirstOrDefault(profile => profile.Id == userId);
-
-        if (userProfile != null)
+        if (DateTime.Parse(date) < DateTime.Now)
         {
-            return context.Response.WriteAsync($"User Id: {userProfile.Id}, Name: {userProfile.Name}");
+            await context.Response.WriteAsync("Error! Date is expired");
+            logger.LogError("Error! Date is expired");
         }
-
+        else
+        {
+            context.Response.Cookies.Append("value" + Guid.NewGuid().ToString(), value, new CookieOptions
+            {
+                Expires = expiryDate
+            });
+            await context.Response.WriteAsync(@"
+            <html>
+                <body>
+                    <h2>Value has been saved in Cookies!</h2>
+                    <a href='/'>Home<a><br>
+                </body>
+            </html>");
+        }
     }
-    return context.Response.WriteAsync($"User Id: {null}, Name: Guest");
+    else
+    {
+        await context.Response.WriteAsync("Error");
+        logger.LogError("Error");
+    }
+});
+app.MapGet("/cookies", async context =>
+{
+    await context.Response.WriteAsync("<html><body>");
+    foreach (var cookie in context.Request.Cookies)
+    {
+        await context.Response.WriteAsync($"<p>Key: {cookie.Key}: Value: {cookie.Value}</p>");
+    }
+    await context.Response.WriteAsync("<a href='/'>Back</a></body></html>");
 });
 app.Run();
 
